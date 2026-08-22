@@ -22,7 +22,7 @@ public class ModSourcesTests
 {
     [Theory]
     [InlineData("CJFWeatherhead/TNI-Mods", "CJFWeatherhead/TNI-Mods")]
-    [InlineData("https://github.com/DefaultUsernameWasAleadyTaken/TNI-data-extractor", "DefaultUsernameWasAleadyTaken/TNI-data-extractor")]
+    [InlineData("https://github.com/DefaultUsernameWasAleadyTaken/TNI-MM-Mods", "DefaultUsernameWasAleadyTaken/TNI-MM-Mods")]
     [InlineData("https://github.com/owner/repo/", "owner/repo")]
     public void NormalizeRepo_Works(string input, string expected) =>
         Assert.Equal(expected, ModSources.NormalizeRepo(input));
@@ -34,13 +34,13 @@ public class ModSourcesTests
             {
               "modRepositories": [
                 "CJFWeatherhead/TNI-Mods",
-                "https://github.com/DefaultUsernameWasAleadyTaken/TNI-data-extractor"
+                "https://github.com/DefaultUsernameWasAleadyTaken/TNI-MM-Mods"
               ]
             }
             """);
         Assert.Equal(2, repos.Count);
         Assert.Contains("CJFWeatherhead/TNI-Mods", repos);
-        Assert.Contains("DefaultUsernameWasAleadyTaken/TNI-data-extractor", repos);
+        Assert.Contains("DefaultUsernameWasAleadyTaken/TNI-MM-Mods", repos);
     }
 
     [Fact]
@@ -48,7 +48,6 @@ public class ModSourcesTests
     {
         var repos = ModSources.GetRepositories(baseDirectory: Path.GetTempPath());
         Assert.Contains("CJFWeatherhead/TNI-Mods", repos);
-        Assert.Contains("DefaultUsernameWasAleadyTaken/TNI-data-extractor", repos);
         Assert.Contains("DefaultUsernameWasAleadyTaken/TNI-MM-Mods", repos);
     }
 }

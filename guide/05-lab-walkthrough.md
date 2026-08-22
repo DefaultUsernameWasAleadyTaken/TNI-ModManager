@@ -1,4 +1,6 @@
-# Newbie — Lab Mode
+# Lab Mode: пошаговый walkthrough
+
+[← 04 Day-1](./04-day1-walkthrough.md) · [Оглавление](./README.md) · [06 Масштабирование](./06-scaling-and-expansion.md)
 
 Tower Networking Inc. Песочница для обучения сети.
 
@@ -233,7 +235,7 @@ ping @c1/b1/f1/p-mail
 | ---------- | -------------------------------------------------------- | --------------------------------------- |
 | **ЦОД**    | **Micro=edge** (оптика) + **Milli=ядро** + FW + DNS/DHCP | dns-server + padu; dnsmasq              |
 | **Этаж 1** | **Micro** + Blade5 + FW-24e + Boulder+×2 (+ питание)     | dns-server + padu; dnsmasq · имена `@c1/b1/f1/…` |
-| **Этаж 2** | Micro + Blade5 + FW-24e + Boulder+ DNS (+ питание)     | **dns-lite** · **без** DHCP · `@c1/b1/f2/…` |
+| **Этаж 2** | Micro + Blade5 + FW-24e + Boulder+×2 (DNS + DHCP)      | dns-server + padu; dnsmasq · `@c1/b1/f2/…` |
 
 
 Линки:
@@ -242,7 +244,7 @@ ping @c1/b1/f1/p-mail
 2. Этаж 2 **down** → TL → **up** этажа 1 (fiber Micro f2 → Micro f1; клиентский FW **не** в optical hop).
 3. У этажа 2 **нет** up дальше (в полном гайде тут был бы f3).
 
-Имена и ПО как в `[tni-day1-starter.md](./tni-day1-starter.md)`, только блок урезан до **2 этажей**.
+Имена и ПО как в `[04-day1-walkthrough.md](./04-day1-walkthrough.md)`, только блок урезан до **2 этажей**.
 
 ### Статус
 
@@ -257,7 +259,7 @@ ping @c1/b1/f1/p-mail
 - [x] `ripup` на `@c1/b1/f1`, `@c1/b1`, `@c1` — ping ЦОД OK  
 - [x] Клиенты на Blade: `scan u` + `dhup` → `@c1/b1/f1/u-…`  
 - [x] mail-hub: `@c1/b1/f1/p-mail` + route `p-` · ping OK  
-- [ ] Этаж 2: `init_f2` + `ripup` + клиенты (DHCP с f1 или статика)
+- [ ] Этаж 2: два Boulder (DNS+DHCP) · `init_f2` · `ripup` · клиенты `dhup`/`dhprod`
 - [ ] DNS map продюсера / money  
 
 ### Клиенты — DHCP (Lab) — факт прогона
@@ -305,9 +307,8 @@ route add @c1/b1/f1/p- via port0 on @c1/b1/f1
 
 Единый алиас:
 
-```text
-alias dhup echo usage: dhup DEVICE_HW; net dhcp boot on $1; net dhcp request on $1
-```
+Алиас `dhup` — секция **Core** в [`alias-pack.txt`](./alias-pack.txt).
+
 
 Также в pack: `dhboot`, `dhper`, `dhreq`, **`dhprod`** (продюсеры под `p-`).
 
@@ -339,13 +340,15 @@ alias dhup echo usage: dhup DEVICE_HW; net dhcp boot on $1; net dhcp request on 
 | detailed-reindeer (mail-hub) | **55808** | `@c1/b1/f1/p-mail` |
 
 
+Пример продюсера (алиас `dhprod` — см. [`alias-pack.txt`](./alias-pack.txt)):
+
 ```text
-alias dhprod echo usage: dhprod HW NETADDR DHCP - example dhprod 55808 @c1/b1/f1/p-mail @c1/b1/f1/dhcp; dhcp option bind $1 as $2 on $3; net dhcp boot on $1; net dhcp request on $1
 route add @c1/b1/f1/p- via port0 on @c1/b1/f1
 dhcp option unbind 55808 on @c1/b1/f1/dhcp
 dhprod 55808 @c1/b1/f1/p-mail @c1/b1/f1/dhcp
 ping @c1/b1/f1/p-mail
 ```
+
 
 `dhprod` = только bind + DHCP. Один route **`p-`** накрывает всех продюсеров этажа (как `u-` — клиентов).
 
@@ -512,10 +515,12 @@ Debugger ──фиолет──► Milli (для init_dc)
 
 В usage алиаса **нельзя** `[…]` — скобки ломают текст (`[lb]`/`[rb]`).
 
+Алиас `adebug` — [`alias-pack.txt`](./alias-pack.txt).
+
 ```text
-alias adebug echo usage: adebug DEVICE_HW; net address set @debug on $1; net dhcp disable on $1; always using @debug
 adebug 98662
 ```
+
 
 #### 2. HW этого сейва (на новой игре — свои)
 
@@ -550,9 +555,8 @@ adebug 98662
 | $9  | префикс **без @** | c1     |
 
 
-```text
-alias init_dc echo usage: init_dc HW_R PORT_DHCP PORT_DNS PORT_FW HW_DHCP HW_DNS HW_FW HW_MICRO PREFIX - PREFIX without @ - example init_dc 85182 2 1 0 26997 57440 10054 43060 c1; route enable broadcast on $1; try ping $1 else echo fail router; route add traffic udp/53 via port$3 on $1; route add traffic udp/67 via port$2 on $1; route default via port$2 on $1; try ping $5 else echo fail dhcp; try program install dnsmasq on $5 else echo skip dhcp install; program start dnsmasq on $5; dhcp option bind $5 as @$9/dhcp on $5; dhcp option bind $6 as @$9/dns on $5; dhcp option bind $1 as @$9 on $5; dhcp option bind $7 as @$9/b1/fw on $5; dhcp option bind $8 as @$9/b1 on $5; dhcp option dns @$9/dns on $5; dhcp option prefix @$9/u- on $5; net dhcp request on $1; net dhcp request on $5; route default via port$3 on $1; try ping $6 else echo fail dns; net dhcp request on $6; try program install dns-server on $6 else echo skip dns; try program install padu_v1 on $6 else echo skip padu; program start dns-server on $6; program start padu_v1 on $6; route default via port$4 on $1; try ping $7 else echo fail fw; net dhcp request on $7; try ping $8 else echo fail micro; net dhcp request on $8; route default drop on $1; route add @$9/dns via port$3 on $1; route add @$9/dhcp via port$2 on $1; route add @$9/b1 via port$4 on $1; route add @$9 via port0 on $8; net dns set @$9/dns on $7; net dns set @$9/dns on $8; net dns set @$9/dns on @debug; firewall deny tcp/8034 on $7; firewall deny tcp/510 on $7; firewall deny tcp/511 on $7; firewall deny tcp/512 on $7; firewall deny tcp/513 on $7; firewall deny tcp/514 on $7; firewall deny tcp/515 on $7; firewall deny tcp/516 on $7; firewall deny tcp/517 on $7; firewall deny tcp/518 on $7; firewall deny tcp/519 on $7; route show on $1
-```
+Полная строка `init_dc` — секция **Core** в [`alias-pack.txt`](./alias-pack.txt).
+
 
 Запуск (этот сейв):
 
@@ -614,12 +618,8 @@ fiber Micro f1 :9 ──► розетка этажа ══TL══► ЦОД M
 
 Ручной `route default via port9` **не нужен**, если на всех роутерах RIP.
 
-```text
-alias ripup echo usage: ripup router; rip advertise on $1; rip listen on $1
-ripup @c1/b1/f1
-ripup @c1/b1
-ripup @c1
-```
+Алиас `ripup` — секция **RIP** в [`alias-pack.txt`](./alias-pack.txt).
+
 
 **Прогон — успех.** На f1: `@c1`, `@c1/dns`, `@c1/dhcp` → port9; на edge/ядре — `@c1/b1/f1/…`.  
 `ping @c1` · `ping @c1/dns` · `ping @c1/b1/f1/dns` — OK.
@@ -636,9 +636,8 @@ RIP **не** создаёт route на `@…/p-mail` сам по себе — н
 
 ### Netshell этажа — `init_f1` (справка)
 
-```text
-alias init_f1 echo usage: init_f1 HW_R PORT_DHCP PORT_DNS PORT_FW HW_DHCP HW_DNS HW_FW HW_BLADE PREFIX - PREFIX without @ - example init_f1 7209 2 1 0 9124 35304 56171 21731 c1/b1/f1; route enable broadcast on $1; try ping $1 else echo fail router; route add traffic udp/67 via port$2 on $1; route default via port$2 on $1; try ping $5 else echo fail dhcp; try program install dnsmasq on $5 else echo skip dhcp install; program start dnsmasq on $5; dhcp option bind $5 as @$9/dhcp on $5; dhcp option bind $6 as @$9/dns on $5; dhcp option bind $1 as @$9 on $5; dhcp option bind $7 as @$9/fw on $5; dhcp option bind $8 as @$9/s1 on $5; dhcp option dns @$9/dns on $5; dhcp option prefix @$9/u- on $5; net dhcp request on $1; net dhcp request on $5; route default via port$3 on $1; try ping $6 else echo fail dns; net dhcp request on $6; try program install dns-server on $6 else echo skip dns; try program install padu_v1 on $6 else echo skip padu; program start dns-server on $6; program start padu_v1 on $6; route default via port$4 on $1; try ping $7 else echo fail fw; net dhcp request on $7; try ping $8 else echo fail blade; net dhcp request on $8; route default drop on $1; route add @$9/dns via port$3 on $1; route add @$9/dhcp via port$2 on $1; route add @$9/fw via port$4 on $1; route add @$9/s1 via port$4 on $1; route add @$9/u- via port$4 on $1; route add @$9/p- via port$4 on $1; try net dns set @c1/dns on @$9/dns else echo skip dns up; try net dns set @$9/dns on @$9/fw else echo skip dns fw; try net dns set @$9/dns on @$9/s1 else echo skip dns blade; try net dns set @$9/dns on @debug else echo skip dns debug; try firewall deny tcp/8034 on @$9/fw else echo skip fw; try firewall deny tcp/510 on @$9/fw else echo skip; try firewall deny tcp/511 on @$9/fw else echo skip; try firewall deny tcp/512 on @$9/fw else echo skip; try firewall deny tcp/513 on @$9/fw else echo skip; try firewall deny tcp/514 on @$9/fw else echo skip; try firewall deny tcp/515 on @$9/fw else echo skip; try firewall deny tcp/516 on @$9/fw else echo skip; try firewall deny tcp/517 on @$9/fw else echo skip; try firewall deny tcp/518 on @$9/fw else echo skip; try firewall deny tcp/519 on @$9/fw else echo skip; route show on $1
-```
+Полная строка `init_f1` — секция **Core** в [`alias-pack.txt`](./alias-pack.txt).
+
 
 
 Запуск (этот сейв):
@@ -676,14 +675,15 @@ init_f1 7209 2 1 0 9124 35304 56171 21731 c1/b1/f1
 
 ## Этаж 2 — патч + netshell (Lab)
 
-**Без** локального DHCP. DNS: **`dns-lite`** (этажи выше f1; полный `dns-server`+padu — только ЦОД и f1). Upstream: `@c1/b1/f1/dns`. Uplink: fiber → TL → up f1 → ЦОД.
+Как f1: **два** Boulder — `@c1/b1/f2/dns` (`dns-server`+`padu`) и `@c1/b1/f2/dhcp` (`dnsmasq`). Upstream DNS: `@c1/b1/f1/dns`. Uplink: fiber → TL → up f1 → ЦОД.
 
-### Патч медь (факт)
+### Патч медь (факт + DHCP)
 
 ```text
 Blade :0 ──► FW :2
                FW :1 ──► Micro f2 :2
-                            └── :3 ──► DNS :0
+                            ├── :1 ──► DHCP :0   (новый Boulder)
+                            └── :3 ──► DNS :0    (бывший комбо → только DNS)
 Micro f2 :9 ──оптика──► розетка f2 ══TL══► up f1 ──► Micro f1 (свободный fiber)
 ```
 
@@ -691,41 +691,23 @@ Micro f2 :9 ──оптика──► розетка f2 ══TL══► up f
 |----|------|---|------|
 | Blade | **0** | FW | **2** |
 | FW | **1** | Micro | **2** |
+| DHCP | **0** | Micro | **1** |
 | DNS | **0** | Micro | **3** |
+
+На DNS (99352): снять `dns-lite`/`dnsmasq`, оставить место под `dns-server`+`padu` (сделает `init_f2`).
 
 ### `init_f2`
 
-Debugger → медь Micro f2. PREFIX **без** `@`.
+Debugger → медь Micro f2. Аргументы **как `init_f1`**. PREFIX **без** `@`.
+
+Полная строка `init_f2` — секция **Core** в [`alias-pack.txt`](./alias-pack.txt).
+
+
+Запуск (DHCP на Micro **:1**, DNS на **:3**, FW на **:2**):
 
 ```text
-alias init_f2 echo usage: init_f2 HW_R PORT_DNS PORT_FW HW_DNS HW_FW HW_BLADE PREFIX - no local DHCP - PREFIX without @ - example init_f2 111 3 2 222 333 444 c1/b1/f2; route enable broadcast on $1; try ping $1 else echo fail router; net address set @$7 on $1; net dhcp disable on $1; route default via port$2 on $1; try ping $4 else echo fail dns; net address set @$7/dns on $4; net dhcp disable on $4; try program install dns-lite on $4 else echo skip dns; program start dns-lite on $4; route default via port$3 on $1; try ping $5 else echo fail fw; net address set @$7/fw on $5; net dhcp disable on $5; try ping $6 else echo fail blade; net address set @$7/s1 on $6; net dhcp disable on $6; route default drop on $1; route add @$7/dns via port$2 on $1; route add @$7/fw via port$3 on $1; route add @$7/s1 via port$3 on $1; route add @$7/u- via port$3 on $1; route add @$7/p- via port$3 on $1; try net dns set @c1/b1/f1/dns on @$7/dns else echo skip dns up; try net dns set @$7/dns on $1 else echo skip dns r; try net dns set @$7/dns on @$7/fw else echo skip dns fw; try net dns set @$7/dns on @$7/s1 else echo skip dns blade; try net dns set @$7/dns on @debug else echo skip dns debug; try firewall deny tcp/8034 on @$7/fw else echo skip fw; try firewall deny tcp/510 on @$7/fw else echo skip; try firewall deny tcp/511 on @$7/fw else echo skip; try firewall deny tcp/512 on @$7/fw else echo skip; try firewall deny tcp/513 on @$7/fw else echo skip; try firewall deny tcp/514 on @$7/fw else echo skip; try firewall deny tcp/515 on @$7/fw else echo skip; try firewall deny tcp/516 on @$7/fw else echo skip; try firewall deny tcp/517 on @$7/fw else echo skip; try firewall deny tcp/518 on @$7/fw else echo skip; try firewall deny tcp/519 on @$7/fw else echo skip; route show on $1
+init_f2 36840 1 3 2 <HW_DHCP> 99352 30444 76637 c1/b1/f2
+rip4 @c1/b1/f2 @c1/b1/f1 @c1/b1 @c1
 ```
 
-Запуск:
-
-```text
-init_f2 <Micro> 3 2 <DNS> <FW> <Blade> c1/b1/f2
-ripup @c1/b1/f2
-ripup @c1/b1/f1
-ripup @c1/b1
-ripup @c1
-ping @c1/b1/f1/dns
-ping @c1/dns
-```
-
-Клиенты f2: без локального DHCP — статика/`nca`, либо `udp/67` на `@c1/b1/f1/dhcp` + prefix/binds на f1 (отдельно).
-
----
-
-Связанные файлы:
-
-- день 1 пошагово: [`tni-day1-starter.md`](./tni-day1-starter.md)
-- справочник: [`tni-floor-connectivity.md`](./tni-floor-connectivity.md)
-- алиасы: [`alias-pack.txt`](./alias-pack.txt)
-
-### Внешние справочники (железо / данные игры)
-
-- [tni-unofficial-docs](https://avril112113.github.io/tni-unofficial-docs/) ([репо](https://github.com/Avril112113/tni-unofficial-docs)) — сгенерированные таблицы устройств, raw-данные; часто с **beta**, на stable могут отличаться
-- [hackmd device-tables](https://hackmd.io/@tower-network/device-tables) — краткая сводка портов/ватт
-- Steam: [Hitchhiker](https://steamcommunity.com/sharedfiles/filedetails/?id=3651464033), [Firewalls](https://steamcommunity.com/sharedfiles/filedetails/?id=3548511586)
-
+Клиенты: Blade → `dhup` / `dhprod` · DNS `@c1/b1/f2/dns` · DHCP `@c1/b1/f2/dhcp`.

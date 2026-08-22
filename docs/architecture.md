@@ -17,6 +17,8 @@
 | Версия | `mod-manager-plus/Version.props` | единственный источник версии приложения |
 | Лаунчеры | `ModManager.bat`, `ModManager.sh` | Win / Linux: `dotnet run` при SDK 8, иначе `publish/…`, иначе автоустановка SDK 8 (user-local) |
 | Docs | `docs/*.md` | архитектура, ADR, releasing |
+| Guides (вне MM scope) | `guide/` | единый гайд: `README.md` + главы `01`–`08`, [`alias-pack.txt`](../guide/alias-pack.txt) |
+| Game command ref | `game-command-ref/` | справочник команд/программ игры |
 
 ```text
 ui/ (Avalonia)  →  Core  →  Godot userdata + GitHub API
@@ -29,7 +31,7 @@ ui/ (Avalonia)  →  Core  →  Godot userdata + GitHub API
 | Windows | `…\Tower Networking Inc\Mods` |
 | Linux | `…/Tower Networking Inc/mods` |
 
-Каталог модов: список репозиториев в [`mod-manager-plus/mod-sources.json`](../mod-manager-plus/mod-sources.json) (сейчас `CJFWeatherhead/TNI-Mods` и `DefaultUsernameWasAleadyTaken/TNI-data-extractor`). Steam App ID: `2939600`.
+Каталог модов: список репозиториев в [`mod-manager-plus/mod-sources.json`](../mod-manager-plus/mod-sources.json) (сейчас `CJFWeatherhead/TNI-Mods` и `DefaultUsernameWasAleadyTaken/TNI-MM-Mods`). Steam App ID: `2939600`.
 
 После успешной загрузки релизов GitHub каталог пишется в `release_cache.json` (рядом с `mod_cache.json` в userdata). При старте менеджер **не** дергает GitHub: показывает кэш + установленные моды. Сеть — только по кнопке «Обновить». При ошибке API (в т.ч. rate limit 403/429) список тоже не очищается.
 
@@ -55,7 +57,7 @@ Self-update проверяет latest release форка
 
 ### Связанные документы
 
-- [decisions.md](decisions.md) · [releasing.md](releasing.md) · [ModManager-README.md](../mod-manager-plus/ModManager-README.md) · [README.md](../README.md)
+- [decisions.md](decisions.md) · [releasing.md](releasing.md) · [project-audit.md](project-audit.md) · [ModManager-README.md](../mod-manager-plus/ModManager-README.md) · [README.md](../README.md) · [guide/README.md](../guide/README.md)
 
 ---
 

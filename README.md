@@ -41,7 +41,8 @@ dotnet run --project src/TniModManager/TniModManager.csproj
 - алиасы в `settings.json` игры;
 - запуск игры через Steam.
 
-Подробнее: [mod-manager-plus/ModManager-README.md](mod-manager-plus/ModManager-README.md).
+Подробнее: [mod-manager-plus/ModManager-README.md](mod-manager-plus/ModManager-README.md).  
+Гайд по игре: [guide/README.md](guide/README.md).
 
 ### Карта репозитория
 
@@ -53,7 +54,9 @@ mod-manager-plus/
   scripts/publish.sh|.cmd      # self-contained publish
   Version.props                # версия приложения
 ModManager.bat / ModManager.sh
-docs/                          # в т.ч. releasing.md
+docs/                          # в т.ч. releasing.md, project-audit.md
+guide/                         # единый гайд TNI: README + 01–08, alias-pack.txt
+game-command-ref/              # справочник команд игры
 ```
 
 ### Self-contained бинарник
